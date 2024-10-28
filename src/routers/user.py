@@ -5,15 +5,18 @@ from sqlalchemy.orm import Session
 from typing import List
 
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/users",
+    tags=['users']
+)
 
-@router.get('/users',response_model=List[schema.UserOut])
+@router.get('/',response_model=List[schema.UserOut])
 def get_all_users(db:Session = Depends(get_db)):
     users = db.query(models.User).all()
     return users
 
 
-@router.post('/users',response_model=schema.UserOut)
+@router.post('/',response_model=schema.UserOut)
 def create_users(user:schema.UserCreate, db:Session = Depends(get_db)):
 
 
@@ -25,7 +28,7 @@ def create_users(user:schema.UserCreate, db:Session = Depends(get_db)):
     return new_user
 
 
-@router.get('/users/{id}',response_model=schema.UserOut)
+@router.get('/{id}',response_model=schema.UserOut)
 def get_user(id:int,db : Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.id == id).first()
     
