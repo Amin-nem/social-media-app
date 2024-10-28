@@ -1,0 +1,1 @@
+This is a simple social media app written in python using FastAPI and Postgres
