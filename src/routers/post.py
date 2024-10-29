@@ -12,17 +12,19 @@ router = APIRouter(
 
 
 @router.get('/',response_model=List[schema.PostResponse])
-def get_posts(db: Session=Depends(get_db), get_current_user: int = Depends(get_current_user)):
+def get_posts(db: Session=Depends(get_db), current_user: int = Depends(get_current_user)):
     # cursor.execute("SELECT * FROM posts")
     # records = cursor.fetchall()
     records = db.query(models.Post).all()
     return records
 
 @router.post('/',status_code=status.HTTP_201_CREATED, response_model=schema.PostResponse)
-def create_post(post:schema.PostCreate, db: Session=Depends(get_db)):
+def create_post(post:schema.PostCreate, db: Session=Depends(get_db), current_user: int = Depends(get_current_user)):
     # cursor.execute("INSERT INTO posts (title, content, published) VALUES (%s,%s,%s) RETURNING *",(post.title,post.content,post.published))
     # new_post = cursor.fetchone()
     # connection.commit()
+
+    print(current_user.email)
     new_post = models.Post(**post.dict())
     db.add(new_post)
     db.commit()
@@ -32,7 +34,7 @@ def create_post(post:schema.PostCreate, db: Session=Depends(get_db)):
 
 
 @router.get("/{id}",response_model=schema.PostResponse)
-def get_post(id: int,db: Session=Depends(get_db)):
+def get_post(id: int,db: Session=Depends(get_db),current_user: int = Depends(get_current_user)):
     # cursor.execute("SELECT * FROM posts WHERE id = %s",(str(id),))
     # post = cursor.fetchone()
     post = db.query(models.Post).filter(models.Post.id==id).first()
@@ -42,7 +44,7 @@ def get_post(id: int,db: Session=Depends(get_db)):
 
 
 @router.delete('/{id}',status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(id:int, db: Session = Depends(get_db)):
+def delete_post(id:int, db: Session = Depends(get_db),current_user: int = Depends(get_current_user)):
     # cursor.execute("DELETE from posts WHERE id = %s RETURNING *",(str(id),))
     # delted_post = cursor.fetchone()
     # connection.commit()
@@ -54,7 +56,7 @@ def delete_post(id:int, db: Session = Depends(get_db)):
     db.commit()
 
 @router.put("/{id}",response_model=schema.PostResponse)
-def update_post(id:int, post:schema.PostCreate, db: Session = Depends(get_db)):
+def update_post(id:int, post:schema.PostCreate, db: Session = Depends(get_db),current_user: int = Depends(get_current_user)):
     # cursor.execute("""UPDATE posts SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *""",(post.title,post.content,post.published,str(id),))
     # updated_post = cursor.fetchone()
     query = db.query(models.Post).filter(models.Post.id == id)
@@ -65,8 +67,3 @@ def update_post(id:int, post:schema.PostCreate, db: Session = Depends(get_db)):
     query.update(post.dict(),synchronize_session=False)
     db.commit()
     return query.first()
-
-
-@router.get('/sqlalchemy')
-def test_posts(db: Session = Depends(get_db)):
-    return {'status':'success'}
