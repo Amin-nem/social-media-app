@@ -15,7 +15,7 @@ router = APIRouter(
 def get_posts(db: Session=Depends(get_db), current_user: int = Depends(get_current_user)):
     # cursor.execute("SELECT * FROM posts")
     # records = cursor.fetchall()
-    records = db.query(models.Post).all()
+    records = db.query(models.Post).filter(models.Post.owner_id == current_user.id).all()
     return records
 
 @router.post('/',status_code=status.HTTP_201_CREATED, response_model=schema.PostResponse)
@@ -24,8 +24,8 @@ def create_post(post:schema.PostCreate, db: Session=Depends(get_db), current_use
     # new_post = cursor.fetchone()
     # connection.commit()
 
-    print(current_user.email)
-    new_post = models.Post(**post.dict())
+    print('---->>>',current_user.id)
+    new_post = models.Post(owner_id = current_user.id,**post.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
@@ -48,11 +48,16 @@ def delete_post(id:int, db: Session = Depends(get_db),current_user: int = Depend
     # cursor.execute("DELETE from posts WHERE id = %s RETURNING *",(str(id),))
     # delted_post = cursor.fetchone()
     # connection.commit()
-    query = db.query(models.Post).filter(models.Post.id == id)
-    if not query.first():
+    post_query = db.query(models.Post).filter(models.Post.id == id)
+
+    post = post_query.first()
+    if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post id {id} not found in database")
     
-    query.delete(synchronize_session=False)
+    if post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Not autherized to perform requested actions")
+    
+    post_query.delete(synchronize_session=False)
     db.commit()
 
 @router.put("/{id}",response_model=schema.PostResponse)
@@ -63,6 +68,9 @@ def update_post(id:int, post:schema.PostCreate, db: Session = Depends(get_db),cu
 
     if not query.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail=f"post id {id} not found in database")
+    
+    if query.first().owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,detail="Not autherized to perform requested actions")
     # connection.commit()
     query.update(post.dict(),synchronize_session=False)
     db.commit()
