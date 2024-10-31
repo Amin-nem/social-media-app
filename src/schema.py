@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime
-
+from enum import IntEnum
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -50,3 +50,13 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     id : Optional[str] = None
+
+
+
+class VoteDirEnum(IntEnum):
+    like = 1
+    novote = 0
+    
+class Vote(BaseModel):
+    post_id : int
+    vote_di : VoteDirEnum
